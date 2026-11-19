@@ -6,6 +6,8 @@
     <title>StoriSync — Stories In Sync With Sound</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -155,7 +157,7 @@
                         <span id="spotify-status-text" class="text-warmMuted">Spotify</span>
                     </button>
                     
-                    <div id="user-avatar" class="w-8 h-8 rounded-full bg-neutral-800 border border-warmBorder flex items-center justify-center text-xs font-medium text-warmAccent">
+                    <div id="user-avatar" class="w-8 h-8 rounded-full bg-neutral-800 border border-warmBorder flex items-center justify-center text-xs font-medium text-warmAccent overflow-hidden">
                         G
                     </div>
                 </div>
@@ -202,7 +204,7 @@
                 <!-- Editor Form -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Meta & Direct Text Input -->
-                    <div class="lg:col-col-span-1 space-y-6">
+                    <div class="lg:col-span-1 space-y-6">
                         <div class="p-6 rounded-2xl bg-warmCard border border-warmBorder space-y-4">
                             <h3 class="text-xs uppercase tracking-wider text-warmMuted font-semibold">Story Details</h3>
                             <div>
@@ -360,8 +362,27 @@
         </footer>
     </div>
 
-    <!-- AUDIO ENGINE IMPLEMENTATION (Web Audio / HTML5 Fallback) -->
+    <!-- AUDIO ENGINE IMPLEMENTATION & AUTH INTEGRATION -->
     <script>
+        /* ================= AUTH CONFIGURATION ================= */
+        const GOOGLE_CLIENT_ID = "161449018079-4coipifs2kn5ih4ivrj7hfi8mfael1ln.apps.googleusercontent.com";
+        let googleTokenClient = null;
+
+        window.addEventListener('load', () => {
+            if (window.google && GOOGLE_CLIENT_ID) {
+                googleTokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: 'openid email profile',
+                    callback: (tokenResponse) => {
+                        if (tokenResponse && tokenResponse.access_token) {
+                            finishGoogleLogin(tokenResponse.access_token);
+                        }
+                    }
+                });
+            }
+            lucide.createIcons();
+        });
+
         /* ================= STATE MANAGEMENT ================= */
         const APP_STATE = {
             currentUser: null,
@@ -479,7 +500,6 @@
 
         function playSoundtrack(track) {
             if (!track || !track.preview_url) {
-                // Fade out current audio if sentence has no sound
                 if (currentAudio) {
                     fadeOutAudio(currentAudio);
                 }
@@ -488,15 +508,13 @@
             }
 
             if (activeTrackId === track.id && currentAudio && !currentAudio.paused) {
-                return; // Already playing this track
+                return;
             }
 
-            // Fade out previous audio
             if (currentAudio) {
                 fadeOutAudio(currentAudio);
             }
 
-            // Create new audio instance
             const newAudio = new Audio(track.preview_url);
             newAudio.volume = 0;
             newAudio.loop = true;
@@ -507,7 +525,7 @@
                 activeTrackId = track.id;
                 updatePlayerUI(track);
             }).catch(err => {
-                console.log("Audio playback user gesture required or blocked:", err);
+                console.log("Audio playback blocked:", err);
                 updatePlayerUI(track);
             });
         }
@@ -560,12 +578,45 @@
 
         /* ================= AUTHENTICATION FLOWS ================= */
         function handleGoogleSignIn() {
+            if (googleTokenClient) {
+                googleTokenClient.requestAccessToken();
+                return;
+            }
+            // Fallback demo user if SDK is blocked or offline
             APP_STATE.currentUser = {
                 name: "Demo Creator",
                 email: "creator@gmail.com",
                 avatar: "G"
             };
+            revealMainApp();
+        }
+
+        async function finishGoogleLogin(accessToken) {
+            try {
+                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                    headers: { Authorization: `Bearer ${accessToken}` }
+                });
+                const profile = await res.json();
+                APP_STATE.currentUser = {
+                    name: profile.name || "Google User",
+                    email: profile.email || "",
+                    avatar: profile.picture ? `<img src="${profile.picture}" class="w-full h-full object-cover rounded-full">` : (profile.name || "G").charAt(0).toUpperCase()
+                };
+            } catch (e) {
+                APP_STATE.currentUser = { name: "Google User", email: "", avatar: "G" };
+            }
             
+            const avatarEl = document.getElementById('user-avatar');
+            if (APP_STATE.currentUser.avatar.startsWith('<img')) {
+                avatarEl.innerHTML = APP_STATE.currentUser.avatar;
+            } else {
+                avatarEl.textContent = APP_STATE.currentUser.avatar;
+            }
+            
+            revealMainApp();
+        }
+
+        function revealMainApp() {
             const authScreen = document.getElementById('auth-screen');
             authScreen.classList.add('opacity-0');
             setTimeout(() => {
@@ -578,7 +629,6 @@
 
         function toggleSpotifyAuthModal() {
             if (!APP_STATE.spotifyConnected) {
-                // Simulate Spotify Auth Connect
                 APP_STATE.spotifyConnected = true;
                 APP_STATE.spotifyUser = "Spotify Account Connected";
                 
@@ -586,7 +636,6 @@
                 document.getElementById('spotify-status-text').textContent = "Spotify Active";
                 document.getElementById('spotify-user-label').textContent = "Connected Account";
             } else {
-                // Disconnect option
                 APP_STATE.spotifyConnected = false;
                 document.getElementById('spotify-dot').className = "w-2 h-2 rounded-full bg-neutral-600";
                 document.getElementById('spotify-status-text').textContent = "Spotify";
@@ -670,7 +719,6 @@
             const raw = document.getElementById('editor-raw-text').value.trim();
             if (!raw) return;
 
-            // Split text by period, exclamation, or question mark followed by space or newline
             const parsed = raw.match(/[^.!?]+[.!?]+/g) || [raw];
             
             APP_STATE.editorSentences = parsed.map(s => ({
@@ -845,17 +893,14 @@
 
             const currentObj = story.sentences[idx];
 
-            // Clean previous active text
             container.innerHTML = `
                 <div class="sentence-fade-in active-sentence">
                     "${currentObj.text}"
                 </div>
             `;
 
-            // Progress Text
             document.getElementById('reader-progress-text').textContent = `${idx + 1} / ${story.sentences.length}`;
 
-            // Trigger audio binding crossfade
             playSoundtrack(currentObj.track);
         }
 
@@ -875,7 +920,6 @@
                 APP_STATE.activeSentenceIndex++;
                 renderCurrentReaderSentence();
             } else {
-                // Loop or Pause at end
                 toggleReaderPlayback(false);
             }
         }
@@ -940,11 +984,6 @@
             document.getElementById('page-reader').classList.add('hidden');
             renderFeed();
         }
-
-        /* Initial Setup */
-        window.onload = function() {
-            lucide.createIcons();
-        };
     </script>
 </body>
 </html>
