@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Identity Services SDK -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Spotify Web Playback SDK -->
+    <script src="https://sdk.scdn.co/spotify-player.js"></script>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -43,7 +45,6 @@
         .serif-text {
             font-family: 'Playfair Display', serif;
         }
-        /* Custom subtle scrollbar */
         ::-webkit-scrollbar {
             width: 5px;
         }
@@ -54,7 +55,6 @@
             background: #262623;
             border-radius: 10px;
         }
-        /* Sentence animations */
         .sentence-fade-in {
             animation: fadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
@@ -74,10 +74,6 @@
             color: #FFFFFF;
             text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
         }
-        .inactive-sentence {
-            opacity: 0.35;
-            transition: opacity 0.8s ease;
-        }
     </style>
 </head>
 <body class="h-full flex flex-col justify-between overflow-x-hidden selection:bg-neutral-800 selection:text-white">
@@ -88,10 +84,9 @@
         <!-- ================= AUTH LANDING SCREEN ================= -->
         <div id="auth-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-warmBg px-6 transition-opacity duration-700">
             <div class="max-w-md w-full text-center space-y-8">
-                <!-- Logo -->
                 <div class="space-y-3">
                     <div class="inline-flex items-center justify-center w-12 h-12 rounded-full border border-warmBorder bg-warmCard text-warmAccent mb-2">
-                        <i data-lucide="disc-3" class="w-6 h-6 animate-spin-slow"></i>
+                        <i data-lucide="disc-3" class="w-6 h-6"></i>
                     </div>
                     <h1 class="serif-text text-4xl sm:text-5xl tracking-tight font-medium">StoriSync</h1>
                     <p class="text-warmMuted text-sm font-light tracking-wide">Where prose finds its soundtrack.</p>
@@ -99,8 +94,7 @@
 
                 <div class="p-8 rounded-2xl bg-warmCard border border-warmBorder shadow-2xl space-y-6">
                     <p class="text-xs uppercase tracking-widest text-warmMuted font-medium">Sign in to continue</p>
-                    
-                    <!-- Google Login Button -->
+
                     <button id="google-login-btn" onclick="handleGoogleSignIn()" class="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-warmBorder bg-neutral-900 hover:bg-neutral-800 text-warmAccent font-medium text-sm transition-all duration-300 hover:border-neutral-700 active:scale-[0.99]">
                         <svg class="w-5 h-5" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -136,7 +130,6 @@
         <!-- ================= MAIN APP NAVIGATION ================= -->
         <header id="app-header" class="hidden sticky top-0 z-40 backdrop-blur-md bg-warmBg/80 border-b border-warmBorder px-6 py-4 transition-all">
             <div class="max-w-6xl mx-auto flex items-center justify-between">
-                <!-- Brand -->
                 <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('feed')">
                     <div class="w-8 h-8 rounded-full border border-warmBorder bg-warmCard flex items-center justify-center">
                         <i data-lucide="disc-3" class="w-4 h-4 text-warmAccent"></i>
@@ -144,19 +137,17 @@
                     <span class="serif-text text-xl font-semibold tracking-tight">StoriSync</span>
                 </div>
 
-                <!-- Navigation Tabs -->
                 <nav class="flex items-center gap-1 bg-warmCard p-1 rounded-full border border-warmBorder text-xs font-medium">
                     <button id="nav-feed" onclick="navigateTo('feed')" class="px-4 py-1.5 rounded-full text-warmAccent bg-neutral-800 transition">Discover</button>
                     <button id="nav-create" onclick="navigateTo('create')" class="px-4 py-1.5 rounded-full text-warmMuted hover:text-warmAccent transition">Create</button>
                 </nav>
 
-                <!-- User Account Profile / Spotify Status -->
                 <div class="flex items-center gap-3">
                     <button id="spotify-connect-btn" onclick="toggleSpotifyAuthModal()" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border border-warmBorder bg-warmCard hover:border-spotifyGreen/50 transition">
                         <span id="spotify-dot" class="w-2 h-2 rounded-full bg-neutral-600"></span>
-                        <span id="spotify-status-text" class="text-warmMuted">Spotify</span>
+                        <span id="spotify-status-text" class="text-warmMuted">Connect Spotify</span>
                     </button>
-                    
+
                     <div id="user-avatar" class="w-8 h-8 rounded-full bg-neutral-800 border border-warmBorder flex items-center justify-center text-xs font-medium text-warmAccent overflow-hidden">
                         G
                     </div>
@@ -168,8 +159,7 @@
         <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
 
             <!-- PAGE 1: DISCOVER / FEED VIEW -->
-            <section id="page-feed" class="space-y-8 animate-fade">
-                <!-- Header Title -->
+            <section id="page-feed" class="space-y-8">
                 <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-warmBorder pb-6 gap-4">
                     <div>
                         <h2 class="serif-text text-3xl sm:text-4xl font-medium">Curated Audio Stories</h2>
@@ -180,30 +170,22 @@
                     </button>
                 </div>
 
-                <!-- Story Grid -->
-                <div id="stories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Dynamic story cards will be injected here -->
-                </div>
+                <div id="stories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             </section>
 
             <!-- PAGE 2: CREATOR STUDIO VIEW -->
-            <section id="page-create" class="hidden space-y-8 animate-fade">
-                <!-- Top Toolbar -->
+            <section id="page-create" class="hidden space-y-8">
                 <div class="flex items-center justify-between border-b border-warmBorder pb-4">
                     <div>
                         <h2 class="serif-text text-2xl font-medium">Story Editor</h2>
                         <p class="text-warmMuted text-xs mt-0.5">Craft your story sentence by sentence and link Spotify soundtracks.</p>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="publishStory()" class="flex items-center gap-2 px-5 py-2 rounded-xl bg-warmAccent text-warmBg font-medium text-xs hover:bg-white transition">
-                            <i data-lucide="send" class="w-3.5 h-3.5"></i> Publish Story
-                        </button>
-                    </div>
+                    <button onclick="publishStory()" class="flex items-center gap-2 px-5 py-2 rounded-xl bg-warmAccent text-warmBg font-medium text-xs hover:bg-white transition">
+                        <i data-lucide="send" class="w-3.5 h-3.5"></i> Publish Story
+                    </button>
                 </div>
 
-                <!-- Editor Form -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- Meta & Direct Text Input -->
                     <div class="lg:col-span-1 space-y-6">
                         <div class="p-6 rounded-2xl bg-warmCard border border-warmBorder space-y-4">
                             <h3 class="text-xs uppercase tracking-wider text-warmMuted font-semibold">Story Details</h3>
@@ -221,7 +203,6 @@
                             </div>
                         </div>
 
-                        <!-- Raw Text Paste / Split Box -->
                         <div class="p-6 rounded-2xl bg-warmCard border border-warmBorder space-y-3">
                             <h3 class="text-xs uppercase tracking-wider text-warmMuted font-semibold">Fast Import</h3>
                             <p class="text-xs text-warmMuted">Paste your paragraph here. We will parse it into sentence units.</p>
@@ -232,7 +213,6 @@
                         </div>
                     </div>
 
-                    <!-- Interactive Sentence Builder -->
                     <div class="lg:col-span-2 space-y-4">
                         <div class="flex items-center justify-between">
                             <h3 class="text-xs uppercase tracking-wider text-warmMuted font-semibold">Sentence Timeline & Audio Binding</h3>
@@ -241,24 +221,19 @@
                             </button>
                         </div>
 
-                        <!-- Sentences List -->
-                        <div id="editor-sentences-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
-                            <!-- Dynamic sentences items rendered here -->
-                        </div>
+                        <div id="editor-sentences-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-2"></div>
                     </div>
                 </div>
             </section>
 
             <!-- PAGE 3: READER MODE (FULLSCREEN EXPERIENCE) -->
-            <section id="page-reader" class="hidden fixed inset-0 z-50 bg-warmBg flex flex-col justify-between p-6 sm:p-12 animate-fade">
-                <!-- Top Navigation & Controls -->
+            <section id="page-reader" class="hidden fixed inset-0 z-50 bg-warmBg flex flex-col justify-between p-6 sm:p-12">
                 <div class="flex items-center justify-between max-w-4xl mx-auto w-full border-b border-warmBorder/40 pb-4">
                     <button onclick="exitReaderMode()" class="flex items-center gap-2 text-warmMuted hover:text-warmAccent text-xs tracking-wider uppercase transition">
                         <i data-lucide="arrow-left" class="w-4 h-4"></i> Exit Story
                     </button>
 
                     <div class="flex items-center gap-4">
-                        <!-- Playback Speed Control -->
                         <div class="flex items-center gap-2 border border-warmBorder rounded-full px-3 py-1 bg-warmCard text-xs">
                             <i data-lucide="clock" class="w-3.5 h-3.5 text-warmMuted"></i>
                             <select id="reader-speed-select" onchange="changeReaderSpeed(this.value)" class="bg-transparent text-warmAccent focus:outline-none cursor-pointer">
@@ -269,7 +244,6 @@
                             </select>
                         </div>
 
-                        <!-- Like Button -->
                         <button id="reader-like-btn" onclick="toggleStoryLike()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-warmBorder bg-warmCard hover:border-red-500/40 transition group">
                             <i id="reader-like-icon" data-lucide="heart" class="w-4 h-4 text-warmMuted group-hover:text-red-400 transition"></i>
                             <span id="reader-like-count" class="text-xs text-warmMuted">0</span>
@@ -277,23 +251,16 @@
                     </div>
                 </div>
 
-                <!-- Story Text Display Area -->
                 <div class="flex-grow max-w-3xl mx-auto w-full flex flex-col justify-center my-8 relative">
-                    <!-- Title Banner Header -->
                     <div class="mb-8 text-center space-y-1">
                         <h2 id="reader-story-title" class="serif-text text-2xl sm:text-3xl text-warmMuted/60 font-light"></h2>
                         <p id="reader-story-author" class="text-xs text-warmMuted/40 uppercase tracking-widest"></p>
                     </div>
 
-                    <!-- Sentence Container -->
-                    <div id="reader-sentence-container" class="space-y-6 text-center text-xl sm:text-2xl md:text-3xl serif-text leading-relaxed px-4 min-h-[220px] flex flex-col justify-center items-center">
-                        <!-- Sentences append progressively -->
-                    </div>
+                    <div id="reader-sentence-container" class="space-y-6 text-center text-xl sm:text-2xl md:text-3xl serif-text leading-relaxed px-4 min-h-[220px] flex flex-col justify-center items-center"></div>
                 </div>
 
-                <!-- Bottom Floating Player Control Bar -->
                 <div class="max-w-2xl mx-auto w-full bg-warmCard/90 border border-warmBorder backdrop-blur-md rounded-2xl p-4 flex items-center justify-between shadow-2xl">
-                    <!-- Track Details -->
                     <div class="flex items-center gap-3">
                         <div id="player-disk" class="w-10 h-10 rounded-full border border-warmBorder bg-neutral-900 flex items-center justify-center relative overflow-hidden">
                             <i data-lucide="music" class="w-4 h-4 text-warmMuted"></i>
@@ -305,7 +272,6 @@
                         </div>
                     </div>
 
-                    <!-- Playback Controls -->
                     <div class="flex items-center gap-3">
                         <button onclick="prevSentence()" class="p-2 text-warmMuted hover:text-warmAccent transition">
                             <i data-lucide="skip-back" class="w-4 h-4"></i>
@@ -318,7 +284,6 @@
                         </button>
                     </div>
 
-                    <!-- Progress Indicator -->
                     <div class="hidden sm:flex items-center gap-2 text-[10px] text-warmMuted">
                         <span id="reader-progress-text">1 / 5</span>
                     </div>
@@ -326,7 +291,7 @@
             </section>
         </main>
 
-        <!-- ================= SPOTIFY SEARCH DRAWER / MODAL ================= -->
+        <!-- ================= SPOTIFY SEARCH MODAL ================= -->
         <div id="spotify-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-warmCard border border-warmBorder rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
                 <button onclick="closeSpotifyModal()" class="absolute top-4 right-4 text-warmMuted hover:text-warmAccent">
@@ -338,19 +303,15 @@
                     <p class="text-xs text-warmMuted">Search and select a soundtrack for sentence #<span id="modal-sentence-idx">1</span></p>
                 </div>
 
-                <!-- Search Input -->
                 <div class="relative">
                     <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-warmMuted"></i>
                     <input type="text" id="spotify-search-input" onkeyup="handleSpotifySearch(this.value)" placeholder="Search song title or artist..." class="w-full bg-neutral-900 border border-warmBorder rounded-xl pl-10 pr-4 py-2.5 text-xs text-warmAccent focus:outline-none focus:border-warmMuted">
                 </div>
 
-                <!-- Spotify Search Results -->
-                <div id="spotify-results-list" class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    <!-- Search items rendered here -->
-                </div>
+                <div id="spotify-results-list" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
 
                 <div class="pt-2 border-t border-warmBorder flex items-center justify-between text-[11px] text-warmMuted">
-                    <span>Connected: <strong id="spotify-user-label" class="text-warmAccent">Spotify Preview SDK</strong></span>
+                    <span>Source: <strong id="spotify-user-label" class="text-warmAccent">Spotify Web API</strong></span>
                     <button onclick="removeAttachedTrack()" class="text-red-400 hover:underline">Clear Attachment</button>
                 </div>
             </div>
@@ -362,26 +323,124 @@
         </footer>
     </div>
 
-    <!-- AUDIO ENGINE IMPLEMENTATION & AUTH INTEGRATION -->
     <script>
-        /* ================= AUTH CONFIGURATION ================= */
+        /* ================= OAUTH & APP CONFIGURATION ================= */
         const GOOGLE_CLIENT_ID = "161449018079-4coipifs2kn5ih4ivrj7hfi8mfael1ln.apps.googleusercontent.com";
-        let googleTokenClient = null;
+        const SPOTIFY_CLIENT_ID = "e62dba9bbf51474eb7194a367e7da85e";
+        const SPOTIFY_REDIRECT_URI = "https://darthkospo.github.io/storisync/";
+        const SPOTIFY_SCOPES = [
+            "user-read-private",
+            "user-read-email",
+            "user-modify-playback-state",
+            "user-read-playback-state",
+            "streaming"
+        ].join(" ");
 
-        window.addEventListener('load', () => {
-            if (window.google && GOOGLE_CLIENT_ID) {
-                googleTokenClient = google.accounts.oauth2.initTokenClient({
-                    client_id: GOOGLE_CLIENT_ID,
-                    scope: 'openid email profile',
-                    callback: (tokenResponse) => {
-                        if (tokenResponse && tokenResponse.access_token) {
-                            finishGoogleLogin(tokenResponse.access_token);
-                        }
-                    }
+        let googleTokenClient = null;
+        let spotifyAccessToken = null;
+        let spotifyPlayer = null;
+        let spotifyDeviceId = null;
+
+        /* ================= PKCE HELPERS FOR SPOTIFY ================= */
+        function generateRandomString(length) {
+            const possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            const values = crypto.getRandomValues(new Uint8Array(length));
+            return values.reduce((acc, x) => acc + possible[x % possible.length], "");
+        }
+
+        async function sha256(plain) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(plain);
+            return window.crypto.subtle.digest("SHA-256", data);
+        }
+
+        function base64urlencode(input) {
+            return btoa(String.fromCharCode.apply(null, new Uint8Array(input)))
+                .replace(/\+/g, "-")
+                .replace(/\//g, "_")
+                .replace(/=+$/, "");
+        }
+
+        async function createCodeChallenge(verifier) {
+            const hashed = await sha256(verifier);
+            return base64urlencode(hashed);
+        }
+
+        async function startSpotifyLogin() {
+            const codeVerifier = generateRandomString(64);
+            const codeChallenge = await createCodeChallenge(codeVerifier);
+            sessionStorage.setItem("spotify_code_verifier", codeVerifier);
+            sessionStorage.setItem("storisync_auto_enter", "1");
+
+            const params = new URLSearchParams({
+                client_id: SPOTIFY_CLIENT_ID,
+                response_type: "code",
+                redirect_uri: SPOTIFY_REDIRECT_URI,
+                code_challenge_method: "S256",
+                code_challenge: codeChallenge,
+                scope: SPOTIFY_SCOPES
+            });
+
+            window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
+        }
+
+        async function exchangeSpotifyCode(code) {
+            const codeVerifier = sessionStorage.getItem("spotify_code_verifier");
+            if (!codeVerifier) return;
+
+            try {
+                const res = await fetch("https://accounts.spotify.com/api/token", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: new URLSearchParams({
+                        client_id: SPOTIFY_CLIENT_ID,
+                        grant_type: "authorization_code",
+                        code,
+                        redirect_uri: SPOTIFY_REDIRECT_URI,
+                        code_verifier: codeVerifier
+                    })
                 });
+                const data = await res.json();
+                if (data.access_token) {
+                    spotifyAccessToken = data.access_token;
+                    APP_STATE.spotifyConnected = true;
+                    updateSpotifyUIConnected();
+                    initSpotifyWebPlayback();
+                }
+            } catch (err) {
+                console.error("Spotify token exchange failed:", err);
+            } finally {
+                sessionStorage.removeItem("spotify_code_verifier");
+                const cleanUrl = window.location.origin + window.location.pathname;
+                window.history.replaceState({}, document.title, cleanUrl);
             }
-            lucide.createIcons();
-        });
+        }
+
+        function initSpotifyWebPlayback() {
+            if (!window.Spotify || !spotifyAccessToken) return;
+
+            spotifyPlayer = new window.Spotify.Player({
+                name: "StoriSync Web Player",
+                getOAuthToken: cb => cb(spotifyAccessToken),
+                volume: 0.7
+            });
+
+            spotifyPlayer.addListener("ready", ({ device_id }) => {
+                spotifyDeviceId = device_id;
+            });
+
+            spotifyPlayer.addListener("not_ready", () => {
+                spotifyDeviceId = null;
+            });
+
+            spotifyPlayer.connect();
+        }
+
+        window.onSpotifyWebPlaybackSDKReady = () => {
+            if (spotifyAccessToken) {
+                initSpotifyWebPlayback();
+            }
+        };
 
         /* ================= STATE MANAGEMENT ================= */
         const APP_STATE = {
@@ -403,6 +462,7 @@
                             text: "The neon reflections melted across the rain-slicked asphalt of Shinjuku.",
                             track: {
                                 id: 't1',
+                                uri: null,
                                 name: 'Tokyo Rain Ambient',
                                 artist: 'Koto Dreams',
                                 preview_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
@@ -417,6 +477,7 @@
                             text: "Inside the corner ramen bar, jazz notes drifted through steam and quiet murmuring.",
                             track: {
                                 id: 't2',
+                                uri: null,
                                 name: 'Midnight Saxophone Jazz',
                                 artist: 'Urban Nocturne',
                                 preview_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a739ef.mp3?filename=chill-abstract-intention-12099.mp3',
@@ -431,6 +492,7 @@
                             text: "Neither spoke, yet the city outside felt infinitely smaller between them.",
                             track: {
                                 id: 't3',
+                                uri: null,
                                 name: 'Soft Piano Reverie',
                                 artist: 'Quiet Moments',
                                 preview_url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77626.mp3?filename=ambient-piano-1234.mp3',
@@ -453,6 +515,7 @@
                             text: "The Pacific breeze carried the salty scent of damp pine and tidepools.",
                             track: {
                                 id: 't4',
+                                uri: null,
                                 name: 'Coastal Tide & Guitar',
                                 artist: 'Pacific Strings',
                                 preview_url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=soft-guitar-ambient-14856.mp3',
@@ -467,6 +530,7 @@
                             text: "We walked down to the driftwood shore as golden hour softened into violet.",
                             track: {
                                 id: 't5',
+                                uri: null,
                                 name: 'Dusk Acoustic Solitude',
                                 artist: 'Coastal Drift',
                                 preview_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
@@ -485,24 +549,25 @@
             activeEditingSentenceIdx: null
         };
 
-        /* ================= SAMPLE SPOTIFY TRACK DATABASE (FOR DEMO/SEARCH) ================= */
         const SPOTIFY_CATALOG = [
-            { id: 'sp1', name: 'Tokyo Rain Lo-Fi', artist: 'Koto Dreams', preview_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3', art: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=150&q=80' },
-            { id: 'sp2', name: 'Midnight Saxophone Jazz', artist: 'Urban Nocturne', preview_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a739ef.mp3?filename=chill-abstract-intention-12099.mp3', art: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=150&q=80' },
-            { id: 'sp3', name: 'Soft Piano Reverie', artist: 'Quiet Moments', preview_url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77626.mp3?filename=ambient-piano-1234.mp3', art: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=150&q=80' },
-            { id: 'sp4', name: 'Deep Space Drone', artist: 'Solaris Synth', preview_url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=soft-guitar-ambient-14856.mp3', art: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=150&q=80' },
-            { id: 'sp5', name: 'Cinematic String Quartet', artist: 'Aura Ensemble', preview_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a739ef.mp3?filename=chill-abstract-intention-12099.mp3', art: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=150&q=80' }
+            { id: 'sp1', uri: null, name: 'Tokyo Rain Lo-Fi', artist: 'Koto Dreams', preview_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3', art: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=150&q=80' },
+            { id: 'sp2', uri: null, name: 'Midnight Saxophone Jazz', artist: 'Urban Nocturne', preview_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a739ef.mp3?filename=chill-abstract-intention-12099.mp3', art: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=150&q=80' },
+            { id: 'sp3', uri: null, name: 'Soft Piano Reverie', artist: 'Quiet Moments', preview_url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77626.mp3?filename=ambient-piano-1234.mp3', art: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=150&q=80' },
+            { id: 'sp4', uri: null, name: 'Deep Space Drone', artist: 'Solaris Synth', preview_url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=soft-guitar-ambient-14856.mp3', art: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=150&q=80' },
+            { id: 'sp5', uri: null, name: 'Cinematic String Quartet', artist: 'Aura Ensemble', preview_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a739ef.mp3?filename=chill-abstract-intention-12099.mp3', art: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=150&q=80' }
         ];
 
         /* ================= AUDIO PLAYER CROSSFADER ================= */
         let currentAudio = null;
         let activeTrackId = null;
 
-        function playSoundtrack(track) {
-            if (!track || !track.preview_url) {
-                if (currentAudio) {
-                    fadeOutAudio(currentAudio);
+        async function playSoundtrack(track) {
+            if (!track) {
+                if (currentAudio) fadeOutAudio(currentAudio);
+                if (spotifyPlayer && spotifyAccessToken) {
+                    spotifyPlayer.pause().catch(() => {});
                 }
+                activeTrackId = null;
                 updatePlayerUI(null);
                 return;
             }
@@ -511,23 +576,40 @@
                 return;
             }
 
-            if (currentAudio) {
-                fadeOutAudio(currentAudio);
+            updatePlayerUI(track);
+
+            // Try Spotify Web Playback SDK if connected and track has a Spotify URI
+            if (track.uri && spotifyAccessToken && spotifyDeviceId) {
+                try {
+                    if (currentAudio) fadeOutAudio(currentAudio);
+                    await fetch(`https://api.spotify.com/v1/me/player/play?device_id=${spotifyDeviceId}`, {
+                        method: "PUT",
+                        headers: {
+                            "Authorization": `Bearer ${spotifyAccessToken}`,
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({ uris: [track.uri] })
+                    });
+                    activeTrackId = track.id;
+                    return;
+                } catch (err) {
+                    console.log("Spotify SDK playback fallback:", err);
+                }
             }
 
-            const newAudio = new Audio(track.preview_url);
+            // Fallback to HTML5 audio preview if available
+            const audioUrl = track.preview_url || SPOTIFY_CATALOG[0].preview_url;
+            if (currentAudio) fadeOutAudio(currentAudio);
+
+            const newAudio = new Audio(audioUrl);
             newAudio.volume = 0;
             newAudio.loop = true;
-            
+
             newAudio.play().then(() => {
                 fadeInAudio(newAudio);
                 currentAudio = newAudio;
                 activeTrackId = track.id;
-                updatePlayerUI(track);
-            }).catch(err => {
-                console.log("Audio playback blocked:", err);
-                updatePlayerUI(track);
-            });
+            }).catch(() => {});
         }
 
         function fadeInAudio(audio) {
@@ -582,12 +664,7 @@
                 googleTokenClient.requestAccessToken();
                 return;
             }
-            // Fallback demo user if SDK is blocked or offline
-            APP_STATE.currentUser = {
-                name: "Demo Creator",
-                email: "creator@gmail.com",
-                avatar: "G"
-            };
+            APP_STATE.currentUser = { name: "Creator", email: "", avatar: "G" };
             revealMainApp();
         }
 
@@ -600,19 +677,21 @@
                 APP_STATE.currentUser = {
                     name: profile.name || "Google User",
                     email: profile.email || "",
-                    avatar: profile.picture ? `<img src="${profile.picture}" class="w-full h-full object-cover rounded-full">` : (profile.name || "G").charAt(0).toUpperCase()
+                    avatar: profile.picture
+                        ? `<img src="${profile.picture}" class="w-full h-full object-cover rounded-full" alt="Avatar">`
+                        : (profile.name || "G").charAt(0).toUpperCase()
                 };
             } catch (e) {
                 APP_STATE.currentUser = { name: "Google User", email: "", avatar: "G" };
             }
-            
+
             const avatarEl = document.getElementById('user-avatar');
             if (APP_STATE.currentUser.avatar.startsWith('<img')) {
                 avatarEl.innerHTML = APP_STATE.currentUser.avatar;
             } else {
                 avatarEl.textContent = APP_STATE.currentUser.avatar;
             }
-            
+
             revealMainApp();
         }
 
@@ -629,18 +708,21 @@
 
         function toggleSpotifyAuthModal() {
             if (!APP_STATE.spotifyConnected) {
-                APP_STATE.spotifyConnected = true;
-                APP_STATE.spotifyUser = "Spotify Account Connected";
-                
-                document.getElementById('spotify-dot').className = "w-2 h-2 rounded-full bg-spotifyGreen shadow-[0_0_8px_#1DB954]";
-                document.getElementById('spotify-status-text').textContent = "Spotify Active";
-                document.getElementById('spotify-user-label').textContent = "Connected Account";
+                startSpotifyLogin();
             } else {
+                spotifyAccessToken = null;
+                spotifyDeviceId = null;
                 APP_STATE.spotifyConnected = false;
                 document.getElementById('spotify-dot').className = "w-2 h-2 rounded-full bg-neutral-600";
-                document.getElementById('spotify-status-text').textContent = "Spotify";
-                document.getElementById('spotify-user-label').textContent = "Spotify Preview SDK";
+                document.getElementById('spotify-status-text').textContent = "Connect Spotify";
+                document.getElementById('spotify-user-label').textContent = "Spotify Web API";
             }
+        }
+
+        function updateSpotifyUIConnected() {
+            document.getElementById('spotify-dot').className = "w-2 h-2 rounded-full bg-spotifyGreen shadow-[0_0_8px_#1DB954]";
+            document.getElementById('spotify-status-text').textContent = "Spotify Connected";
+            document.getElementById('spotify-user-label').textContent = "Connected Account";
         }
 
         /* ================= NAVIGATION ================= */
@@ -720,7 +802,6 @@
             if (!raw) return;
 
             const parsed = raw.match(/[^.!?]+[.!?]+/g) || [raw];
-            
             APP_STATE.editorSentences = parsed.map(s => ({
                 text: s.trim(),
                 track: null
@@ -775,7 +856,6 @@
                 alert("Please provide a story title.");
                 return;
             }
-
             if (APP_STATE.editorSentences.length === 0) {
                 alert("Please write at least one sentence.");
                 return;
@@ -805,6 +885,7 @@
         function openSpotifyModal(sentenceIdx) {
             APP_STATE.activeEditingSentenceIdx = sentenceIdx;
             document.getElementById('modal-sentence-idx').textContent = sentenceIdx + 1;
+            document.getElementById('spotify-search-input').value = '';
             document.getElementById('spotify-modal').classList.remove('hidden');
             handleSpotifySearch('');
         }
@@ -813,16 +894,11 @@
             document.getElementById('spotify-modal').classList.add('hidden');
         }
 
-        function handleSpotifySearch(query) {
+        function renderSearchResults(tracks) {
             const list = document.getElementById('spotify-results-list');
             list.innerHTML = '';
 
-            const filtered = SPOTIFY_CATALOG.filter(t => 
-                t.name.toLowerCase().includes(query.toLowerCase()) || 
-                t.artist.toLowerCase().includes(query.toLowerCase())
-            );
-
-            filtered.forEach(track => {
+            tracks.forEach(track => {
                 const item = document.createElement('div');
                 item.className = "flex items-center justify-between p-2.5 rounded-xl bg-neutral-900 border border-warmBorder/60 hover:border-spotifyGreen/50 cursor-pointer transition";
                 item.onclick = () => selectSpotifyTrack(track);
@@ -840,6 +916,39 @@
                 list.appendChild(item);
             });
             lucide.createIcons();
+        }
+
+        async function handleSpotifySearch(query) {
+            const q = query.trim();
+            if (!spotifyAccessToken || !q) {
+                const filtered = SPOTIFY_CATALOG.filter(t =>
+                    !q ||
+                    t.name.toLowerCase().includes(q.toLowerCase()) ||
+                    t.artist.toLowerCase().includes(q.toLowerCase())
+                );
+                renderSearchResults(filtered);
+                return;
+            }
+
+            try {
+                const res = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=6`, {
+                    headers: { "Authorization": `Bearer ${spotifyAccessToken}` }
+                });
+                const data = await res.json();
+                if (data.tracks && data.tracks.items.length > 0) {
+                    const tracks = data.tracks.items.map(t => ({
+                        id: t.id,
+                        uri: t.uri,
+                        name: t.name,
+                        artist: t.artists.map(a => a.name).join(", "),
+                        preview_url: t.preview_url,
+                        art: t.album.images[0]?.url || SPOTIFY_CATALOG[0].art
+                    }));
+                    renderSearchResults(tracks);
+                }
+            } catch (err) {
+                console.error("Spotify search failed:", err);
+            }
         }
 
         function selectSpotifyTrack(track) {
@@ -870,7 +979,7 @@
             document.getElementById('reader-story-title').textContent = story.title;
             document.getElementById('reader-story-author').textContent = "By " + story.author;
             document.getElementById('reader-like-count').textContent = story.likes;
-            
+
             const likeIcon = document.getElementById('reader-like-icon');
             if (story.isLiked) {
                 likeIcon.classList.add('text-red-500', 'fill-current');
@@ -879,7 +988,6 @@
             }
 
             document.getElementById('page-reader').classList.remove('hidden');
-
             renderCurrentReaderSentence();
             startReaderTimer();
         }
@@ -892,15 +1000,8 @@
             if (!story || idx >= story.sentences.length) return;
 
             const currentObj = story.sentences[idx];
-
-            container.innerHTML = `
-                <div class="sentence-fade-in active-sentence">
-                    "${currentObj.text}"
-                </div>
-            `;
-
+            container.innerHTML = `<div class="sentence-fade-in active-sentence">"${currentObj.text}"</div>`;
             document.getElementById('reader-progress-text').textContent = `${idx + 1} / ${story.sentences.length}`;
-
             playSoundtrack(currentObj.track);
         }
 
@@ -915,7 +1016,6 @@
 
         function nextSentence() {
             if (!APP_STATE.currentStory) return;
-
             if (APP_STATE.activeSentenceIndex < APP_STATE.currentStory.sentences.length - 1) {
                 APP_STATE.activeSentenceIndex++;
                 renderCurrentReaderSentence();
@@ -926,7 +1026,6 @@
 
         function prevSentence() {
             if (!APP_STATE.currentStory) return;
-
             if (APP_STATE.activeSentenceIndex > 0) {
                 APP_STATE.activeSentenceIndex--;
                 renderCurrentReaderSentence();
@@ -947,6 +1046,7 @@
                 playIcon.setAttribute('data-lucide', 'play');
                 clearInterval(APP_STATE.readerInterval);
                 if (currentAudio) currentAudio.pause();
+                if (spotifyPlayer && spotifyAccessToken) spotifyPlayer.pause().catch(() => {});
             }
             lucide.createIcons();
         }
@@ -978,12 +1078,39 @@
 
         function exitReaderMode() {
             clearInterval(APP_STATE.readerInterval);
-            if (currentAudio) {
-                fadeOutAudio(currentAudio);
-            }
+            if (currentAudio) fadeOutAudio(currentAudio);
+            if (spotifyPlayer && spotifyAccessToken) spotifyPlayer.pause().catch(() => {});
             document.getElementById('page-reader').classList.add('hidden');
             renderFeed();
         }
+
+        /* ================= INITIALIZATION ================= */
+        window.addEventListener("load", async () => {
+            if (window.google && GOOGLE_CLIENT_ID) {
+                googleTokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: GOOGLE_CLIENT_ID,
+                    scope: "openid email profile",
+                    callback: (tokenResponse) => {
+                        if (tokenResponse && tokenResponse.access_token) {
+                            finishGoogleLogin(tokenResponse.access_token);
+                        }
+                    }
+                });
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const authCode = params.get("code");
+            if (authCode) {
+                await exchangeSpotifyCode(authCode);
+                if (sessionStorage.getItem("storisync_auto_enter") === "1") {
+                    sessionStorage.removeItem("storisync_auto_enter");
+                    APP_STATE.currentUser = APP_STATE.currentUser || { name: "Creator", email: "", avatar: "G" };
+                    revealMainApp();
+                }
+            }
+
+            lucide.createIcons();
+        });
     </script>
 </body>
 </html>
