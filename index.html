@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoriSync — Stories In Sync With Sound</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        warmBg: '#0D0D0C',
+                        warmCard: '#151513',
+                        warmBorder: '#262623',
+                        warmAccent: '#E6E4DD',
+                        warmMuted: '#8C8A84',
+                        spotifyGreen: '#1DB954',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0D0D0C;
+            color: #E6E4DD;
+            font-family: 'Inter', sans-serif;
+        }
+        .serif-text {
+            font-family: 'Playfair Display', serif;
+        }
+        /* Custom subtle scrollbar */
+        ::-webkit-scrollbar {
+            width: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0D0D0C;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262623;
+            border-radius: 10px;
+        }
+        /* Sentence animations */
+        .sentence-fade-in {
+            animation: fadeIn 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+                filter: blur(4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                filter: blur(0);
+            }
+        }
+        .active-sentence {
+            color: #FFFFFF;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.15);
+        }
+        .inactive-sentence {
+            opacity: 0.35;
+            transition: opacity 0.8s ease;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between overflow-x-hidden selection:bg-neutral-800 selection:text-white">
+
+    <!-- APP CONTAINER -->
+    <div id="app" class="min-h-screen flex flex-col">
+
+        <!-- ================= AUTH LANDING SCREEN ================= -->
+        <div id="auth-screen" class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-warmBg px-6 transition-opacity duration-700">
+            <div class="max-w-md w-full text-center space-y-8">
+                <!-- Logo -->
+                <div class="space-y-3">
+                    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full border border-warmBorder bg-warmCard text-warmAccent mb-2">
+                        <i data-lucide="disc-3" class="w-6 h-6 animate-spin-slow"></i>
+                    </div>
+                    <h1 class="serif-text text-4xl sm:text-5xl tracking-tight font-medium">StoriSync</h1>
+                    <p class="text-warmMuted text-sm font-light tracking-wide">Where prose finds its soundtrack.</p>
+                </div>
+
+                <div class="p-8 rounded-2xl bg-warmCard border border-warmBorder shadow-2xl space-y-6">
+                    <p class="text-xs uppercase tracking-widest text-warmMuted font-medium">Sign in to continue</p>
+                    
+                    <!-- Google Login Button -->
+                    <button id="google-login-btn" onclick="handleGoogleSignIn()" class="w-full flex items-center justify-center gap-3 px-5 py-3.5 rounded-xl border border-warmBorder bg-neutral-900 hover:bg-neutral-800 text-warmAccent font-medium text-sm transition-all duration-300 hover:border-neutral-700 active:scale-[0.99]">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24">
+                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        </svg>
+                        <span>Continue with Google</span>
+                    </button>
+
+                    <div class="relative flex py-1 items-center">
+                        <div class="flex-grow border-t border-warmBorder"></div>
+                        <span class="flex-shrink mx-4 text-xs text-warmMuted uppercase tracking-wider">Features</span>
+                        <div class="flex-grow border-t border-warmBorder"></div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 text-xs text-warmMuted">
+                        <div class="p-3 rounded-lg border border-warmBorder/60 bg-neutral-900/50 text-left">
+                            <i data-lucide="pen-tool" class="w-4 h-4 text-warmAccent mb-1"></i>
+                            <span class="block text-warmAccent font-medium">For Creators</span>
+                            Sentence-level audio pairing.
+                        </div>
+                        <div class="p-3 rounded-lg border border-warmBorder/60 bg-neutral-900/50 text-left">
+                            <i data-lucide="headphones" class="w-4 h-4 text-warmAccent mb-1"></i>
+                            <span class="block text-warmAccent font-medium">For Viewers</span>
+                            Synced dynamic story playback.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= MAIN APP NAVIGATION ================= -->
+        <header id="app-header" class="hidden sticky top-0 z-40 backdrop-blur-md bg-warmBg/80 border-b border-warmBorder px-6 py-4 transition-all">
+            <div class="max-w-6xl mx-auto flex items-center justify-between">
+                <!-- Brand -->
+                <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('feed')">
+                    <div class="w-8 h-8 rounded-full border border-warmBorder bg-warmCard flex items-center justify-center">
+                        <i data-lucide="disc-3" class="w-4 h-4 text-warmAccent"></i>
+                    </div>
+                    <span class="serif-text text-xl font-semibold tracking-tight">StoriSync</span>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="flex items-center gap-1 bg-warmCard p-1 rounded-full border border-warmBorder text-xs font-medium">
+                    <button id="nav-feed" onclick="navigateTo('feed')" class="px-4 py-1.5 rounded-full text-warmAccent bg-neutral-800 transition">Discover</button>
+                    <button id="nav-create" onclick="navigateTo('create')" class="px-4 py-1.5 rounded-full text-warmMuted hover:text-warmAccent transition">Create</button>
+                </nav>
+
+                <!-- User Account Profile / Spotify Status -->
+                <div class="flex items-center gap-3">
+                    <button id="spotify-connect-btn" onclick="toggleSpotifyAuthModal()" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs border border-warmBorder bg-warmCard hover:border-spotifyGreen/50 transition">
+                        <span id="spotify-dot" class="w-2 h-2 rounded-full bg-neutral-600"></span>
+                        <span id="spotify-status-text" class="text-warmMuted">Spotify</span>
+                    </button>
+                    
+                    <div id="user-avatar" class="w-8 h-8 rounded-full bg-neutral-800 border border-warmBorder flex items-center justify-center text-xs font-medium text-warmAccent">
+                        G
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ================= MAIN CONTENT AREA ================= -->
+        <main class="flex-grow max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+
+            <!-- PAGE 1: DISCOVER / FEED VIEW -->
+            <section id="page-feed" class="space-y-8 animate-fade">
+                <!-- Header Title -->
+                <div class="flex flex-col sm:flex-row sm:items-end justify-between border-b border-warmBorder pb-6 gap-4">
+                    <div>
+                        <h2 class="serif-text text-3xl sm:text-4xl font-medium">Curated Audio Stories</h2>
+                        <p class="text-warmMuted text-sm mt-1">Select a story to experience text synchronized with soundscapes.</p>
+                    </div>
+                    <button onclick="navigateTo('create')" class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-warmAccent text-warmBg font-medium text-xs hover:bg-white transition self-start sm:self-auto">
+                        <i data-lucide="plus" class="w-4 h-4"></i> Create Story
+                    </button>
+                </div>
+
+                <!-- Story Grid -->
+                <div id="stories-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Dynamic story cards will be injected here -->
+                </div>
+            </section>
+
+            <!-- PAGE 2: CREATOR STUDIO VIEW -->
+            <section id="page-create" class="hidden space-y-8 animate-fade">
+                <!-- Top Toolbar -->
+                <div class="flex items-center justify-between border-b border-warmBorder pb-4">
+                    <div>
+                        <h2 class="serif-text text-2xl font-medium">Story Editor</h2>
+                        <p class="text-warmMuted text-xs mt-0.5">Craft your story sentence by sentence and link Spotify soundtracks.</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="publishStory()" class="flex items-center gap-2 px-5 py-2 rounded-xl bg-warmAccent text-warmBg font-medium text-xs hover:bg-white transition">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i> Publish Story
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Editor Form -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Meta & Direct Text Input -->
+                    <div class="lg:col-col-span-1 space-y-6">
+                        <div class="p-6 rounded-2xl bg-warmCard border border-warmBorder space-y-4">
+                            <h3 class="text-xs uppercase tracking-wider text-warmMuted font-semibold">Story Details</h3>
+                            <div>
+                                <label class="block text-xs text-warmMuted mb-1">Title</label>
+                                <input type="text" id="editor-title" placeholder="e.g. Neon Rain in Shinjuku" class="w-full bg-neutral-900 border border-warmBorder rounded-xl px-3.5 py-2.5 text-sm text-warmAccent focus:outline-none focus:border-warmMuted">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-warmMuted mb-1">Author</label>
+                                <input type="text" id="editor-author" placeholder="Your Name" class="w-full bg-neutral-900 border border-warmBorder rounded-xl px-3.5 py-2.5 text-sm text-warmAccent focus:outline-none focus:border-warmMuted">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-warmMuted mb-1">Vibe Tag</label>
+                                <input type="text" id="editor-vibe" placeholder="e.g. Lo-fi Ambient / Tokyo Night" class="w-full bg-neutral-900 border border-warmBorder rounded-xl px-3.5 py-2.5 text-sm text-warmAccent focus:outline-none focus:border-warmMuted">
+                            </div>
+                        </div>
+
+                        <!-- Raw Text Paste / Split Box -->
+                        <div class="p-6 rounded-2xl bg-warmCard border border-warmBorder space-y-3">
+                            <h3 class="text-xs uppercase tracking-wider text-warmMuted font-semibold">Fast Import</h3>
+                            <p class="text-xs text-warmMuted">Paste your paragraph here. We will parse it into sentence units.</p>
+                            <textarea id="editor-raw-text" rows="5" placeholder="The engine hummed against the dark asphalt. Raindrops streaked the neon reflections..." class="w-full bg-neutral-900 border border-warmBorder rounded-xl p-3 text-xs text-warmAccent focus:outline-none focus:border-warmMuted resize-none"></textarea>
+                            <button onclick="parseRawTextIntoSentences()" class="w-full py-2 rounded-xl border border-warmBorder bg-neutral-800 hover:bg-neutral-700 text-xs text-warmAccent transition font-medium">
+                                Convert to Sentences
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Interactive Sentence Builder -->
+                    <div class="lg:col-span-2 space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-xs uppercase tracking-wider text-warmMuted font-semibold">Sentence Timeline & Audio Binding</h3>
+                            <button onclick="addEmptySentence()" class="text-xs text-warmAccent hover:underline flex items-center gap-1">
+                                <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> Add Sentence
+                            </button>
+                        </div>
+
+                        <!-- Sentences List -->
+                        <div id="editor-sentences-list" class="space-y-3 max-h-[600px] overflow-y-auto pr-2">
+                            <!-- Dynamic sentences items rendered here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PAGE 3: READER MODE (FULLSCREEN EXPERIENCE) -->
+            <section id="page-reader" class="hidden fixed inset-0 z-50 bg-warmBg flex flex-col justify-between p-6 sm:p-12 animate-fade">
+                <!-- Top Navigation & Controls -->
+                <div class="flex items-center justify-between max-w-4xl mx-auto w-full border-b border-warmBorder/40 pb-4">
+                    <button onclick="exitReaderMode()" class="flex items-center gap-2 text-warmMuted hover:text-warmAccent text-xs tracking-wider uppercase transition">
+                        <i data-lucide="arrow-left" class="w-4 h-4"></i> Exit Story
+                    </button>
+
+                    <div class="flex items-center gap-4">
+                        <!-- Playback Speed Control -->
+                        <div class="flex items-center gap-2 border border-warmBorder rounded-full px-3 py-1 bg-warmCard text-xs">
+                            <i data-lucide="clock" class="w-3.5 h-3.5 text-warmMuted"></i>
+                            <select id="reader-speed-select" onchange="changeReaderSpeed(this.value)" class="bg-transparent text-warmAccent focus:outline-none cursor-pointer">
+                                <option value="6000" class="bg-warmCard">Slow (6s)</option>
+                                <option value="4500" selected class="bg-warmCard">Fluid (4.5s)</option>
+                                <option value="3000" class="bg-warmCard">Fast (3s)</option>
+                                <option value="0" class="bg-warmCard">Manual Only</option>
+                            </select>
+                        </div>
+
+                        <!-- Like Button -->
+                        <button id="reader-like-btn" onclick="toggleStoryLike()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-warmBorder bg-warmCard hover:border-red-500/40 transition group">
+                            <i id="reader-like-icon" data-lucide="heart" class="w-4 h-4 text-warmMuted group-hover:text-red-400 transition"></i>
+                            <span id="reader-like-count" class="text-xs text-warmMuted">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Story Text Display Area -->
+                <div class="flex-grow max-w-3xl mx-auto w-full flex flex-col justify-center my-8 relative">
+                    <!-- Title Banner Header -->
+                    <div class="mb-8 text-center space-y-1">
+                        <h2 id="reader-story-title" class="serif-text text-2xl sm:text-3xl text-warmMuted/60 font-light"></h2>
+                        <p id="reader-story-author" class="text-xs text-warmMuted/40 uppercase tracking-widest"></p>
+                    </div>
+
+                    <!-- Sentence Container -->
+                    <div id="reader-sentence-container" class="space-y-6 text-center text-xl sm:text-2xl md:text-3xl serif-text leading-relaxed px-4 min-h-[220px] flex flex-col justify-center items-center">
+                        <!-- Sentences append progressively -->
+                    </div>
+                </div>
+
+                <!-- Bottom Floating Player Control Bar -->
+                <div class="max-w-2xl mx-auto w-full bg-warmCard/90 border border-warmBorder backdrop-blur-md rounded-2xl p-4 flex items-center justify-between shadow-2xl">
+                    <!-- Track Details -->
+                    <div class="flex items-center gap-3">
+                        <div id="player-disk" class="w-10 h-10 rounded-full border border-warmBorder bg-neutral-900 flex items-center justify-center relative overflow-hidden">
+                            <i data-lucide="music" class="w-4 h-4 text-warmMuted"></i>
+                            <img id="player-art" class="absolute inset-0 w-full h-full object-cover hidden" src="" alt="Album Art">
+                        </div>
+                        <div class="space-y-0.5">
+                            <div id="player-track-name" class="text-xs font-medium text-warmAccent line-clamp-1">Ambient silence</div>
+                            <div id="player-artist-name" class="text-[10px] text-warmMuted line-clamp-1">Synced to current sentence</div>
+                        </div>
+                    </div>
+
+                    <!-- Playback Controls -->
+                    <div class="flex items-center gap-3">
+                        <button onclick="prevSentence()" class="p-2 text-warmMuted hover:text-warmAccent transition">
+                            <i data-lucide="skip-back" class="w-4 h-4"></i>
+                        </button>
+                        <button id="reader-play-pause-btn" onclick="toggleReaderPlayback()" class="w-9 h-9 rounded-full bg-warmAccent text-warmBg flex items-center justify-center hover:bg-white transition">
+                            <i id="reader-play-icon" data-lucide="play" class="w-4 h-4 fill-current"></i>
+                        </button>
+                        <button onclick="nextSentence()" class="p-2 text-warmMuted hover:text-warmAccent transition">
+                            <i data-lucide="skip-forward" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Progress Indicator -->
+                    <div class="hidden sm:flex items-center gap-2 text-[10px] text-warmMuted">
+                        <span id="reader-progress-text">1 / 5</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- ================= SPOTIFY SEARCH DRAWER / MODAL ================= -->
+        <div id="spotify-modal" class="hidden fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-warmCard border border-warmBorder rounded-2xl max-w-md w-full p-6 space-y-6 shadow-2xl relative">
+                <button onclick="closeSpotifyModal()" class="absolute top-4 right-4 text-warmMuted hover:text-warmAccent">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+
+                <div class="space-y-1">
+                    <h3 class="serif-text text-xl font-medium">Attach Spotify Track</h3>
+                    <p class="text-xs text-warmMuted">Search and select a soundtrack for sentence #<span id="modal-sentence-idx">1</span></p>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-3 text-warmMuted"></i>
+                    <input type="text" id="spotify-search-input" onkeyup="handleSpotifySearch(this.value)" placeholder="Search song title or artist..." class="w-full bg-neutral-900 border border-warmBorder rounded-xl pl-10 pr-4 py-2.5 text-xs text-warmAccent focus:outline-none focus:border-warmMuted">
+                </div>
+
+                <!-- Spotify Search Results -->
+                <div id="spotify-results-list" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    <!-- Search items rendered here -->
+                </div>
+
+                <div class="pt-2 border-t border-warmBorder flex items-center justify-between text-[11px] text-warmMuted">
+                    <span>Connected: <strong id="spotify-user-label" class="text-warmAccent">Spotify Preview SDK</strong></span>
+                    <button onclick="removeAttachedTrack()" class="text-red-400 hover:underline">Clear Attachment</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <footer id="app-footer" class="hidden border-t border-warmBorder/40 py-6 text-center text-xs text-warmMuted">
+            <p>StoriSync Platform — Designed for storytellers and ambient listeners.</p>
+        </footer>
+    </div>
+
+    <!-- AUDIO ENGINE IMPLEMENTATION (Web Audio / HTML5 Fallback) -->
+    <script>
+        /* ================= STATE MANAGEMENT ================= */
+        const APP_STATE = {
+            currentUser: null,
+            spotifyConnected: false,
+            spotifyUser: null,
+            stories: [
+                {
+                    id: 'story-1',
+                    title: "Midnight in Tokyo",
+                    author: "Kenji Sato",
+                    vibe: "Lo-fi / Ambient rain",
+                    readTime: "2 min",
+                    likes: 142,
+                    isLiked: false,
+                    coverImg: "https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=600&q=80",
+                    sentences: [
+                        {
+                            text: "The neon reflections melted across the rain-slicked asphalt of Shinjuku.",
+                            track: {
+                                id: 't1',
+                                name: 'Tokyo Rain Ambient',
+                                artist: 'Koto Dreams',
+                                preview_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
+                                art: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=150&q=80'
+                            }
+                        },
+                        {
+                            text: "He pulled his trench coat tight, listening to the soft hum of late-night vending machines.",
+                            track: null
+                        },
+                        {
+                            text: "Inside the corner ramen bar, jazz notes drifted through steam and quiet murmuring.",
+                            track: {
+                                id: 't2',
+                                name: 'Midnight Saxophone Jazz',
+                                artist: 'Urban Nocturne',
+                                preview_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a739ef.mp3?filename=chill-abstract-intention-12099.mp3',
+                                art: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=150&q=80'
+                            }
+                        },
+                        {
+                            text: "She sat three stools down, turning the wooden toothpick in her hands slowly.",
+                            track: null
+                        },
+                        {
+                            text: "Neither spoke, yet the city outside felt infinitely smaller between them.",
+                            track: {
+                                id: 't3',
+                                name: 'Soft Piano Reverie',
+                                artist: 'Quiet Moments',
+                                preview_url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77626.mp3?filename=ambient-piano-1234.mp3',
+                                art: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=150&q=80'
+                            }
+                        }
+                    ]
+                },
+                {
+                    id: 'story-2',
+                    title: "Echoes of the Coast",
+                    author: "Elena Vance",
+                    vibe: "Ocean Waves & Acoustic",
+                    readTime: "1.5 min",
+                    likes: 89,
+                    isLiked: false,
+                    coverImg: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80",
+                    sentences: [
+                        {
+                            text: "The Pacific breeze carried the salty scent of damp pine and tidepools.",
+                            track: {
+                                id: 't4',
+                                name: 'Coastal Tide & Guitar',
+                                artist: 'Pacific Strings',
+                                preview_url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=soft-guitar-ambient-14856.mp3',
+                                art: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=150&q=80'
+                            }
+                        },
+                        {
+                            text: "Lighthouse beams cut through fog like pale fingers searching for lost sailors.",
+                            track: null
+                        },
+                        {
+                            text: "We walked down to the driftwood shore as golden hour softened into violet.",
+                            track: {
+                                id: 't5',
+                                name: 'Dusk Acoustic Solitude',
+                                artist: 'Coastal Drift',
+                                preview_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3',
+                                art: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=150&q=80'
+                            }
+                        }
+                    ]
+                }
+            ],
+            currentStory: null,
+            activeSentenceIndex: 0,
+            readerInterval: null,
+            readerSpeed: 4500,
+            isPlaying: false,
+            editorSentences: [],
+            activeEditingSentenceIdx: null
+        };
+
+        /* ================= SAMPLE SPOTIFY TRACK DATABASE (FOR DEMO/SEARCH) ================= */
+        const SPOTIFY_CATALOG = [
+            { id: 'sp1', name: 'Tokyo Rain Lo-Fi', artist: 'Koto Dreams', preview_url: 'https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=lofi-study-112191.mp3', art: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=150&q=80' },
+            { id: 'sp2', name: 'Midnight Saxophone Jazz', artist: 'Urban Nocturne', preview_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a739ef.mp3?filename=chill-abstract-intention-12099.mp3', art: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=150&q=80' },
+            { id: 'sp3', name: 'Soft Piano Reverie', artist: 'Quiet Moments', preview_url: 'https://cdn.pixabay.com/download/audio/2022/10/14/audio_9939f77626.mp3?filename=ambient-piano-1234.mp3', art: 'https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?auto=format&fit=crop&w=150&q=80' },
+            { id: 'sp4', name: 'Deep Space Drone', artist: 'Solaris Synth', preview_url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_d0a13f69d2.mp3?filename=soft-guitar-ambient-14856.mp3', art: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=150&q=80' },
+            { id: 'sp5', name: 'Cinematic String Quartet', artist: 'Aura Ensemble', preview_url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_c8c8a739ef.mp3?filename=chill-abstract-intention-12099.mp3', art: 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=150&q=80' }
+        ];
+
+        /* ================= AUDIO PLAYER CROSSFADER ================= */
+        let currentAudio = null;
+        let activeTrackId = null;
+
+        function playSoundtrack(track) {
+            if (!track || !track.preview_url) {
+                // Fade out current audio if sentence has no sound
+                if (currentAudio) {
+                    fadeOutAudio(currentAudio);
+                }
+                updatePlayerUI(null);
+                return;
+            }
+
+            if (activeTrackId === track.id && currentAudio && !currentAudio.paused) {
+                return; // Already playing this track
+            }
+
+            // Fade out previous audio
+            if (currentAudio) {
+                fadeOutAudio(currentAudio);
+            }
+
+            // Create new audio instance
+            const newAudio = new Audio(track.preview_url);
+            newAudio.volume = 0;
+            newAudio.loop = true;
+            
+            newAudio.play().then(() => {
+                fadeInAudio(newAudio);
+                currentAudio = newAudio;
+                activeTrackId = track.id;
+                updatePlayerUI(track);
+            }).catch(err => {
+                console.log("Audio playback user gesture required or blocked:", err);
+                updatePlayerUI(track);
+            });
+        }
+
+        function fadeInAudio(audio) {
+            let vol = 0;
+            const timer = setInterval(() => {
+                vol += 0.1;
+                if (vol >= 0.7) {
+                    audio.volume = 0.7;
+                    clearInterval(timer);
+                } else {
+                    audio.volume = vol;
+                }
+            }, 100);
+        }
+
+        function fadeOutAudio(audio) {
+            let vol = audio.volume;
+            const timer = setInterval(() => {
+                vol -= 0.1;
+                if (vol <= 0.05) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    clearInterval(timer);
+                } else {
+                    audio.volume = vol;
+                }
+            }, 100);
+        }
+
+        function updatePlayerUI(track) {
+            const trackName = document.getElementById('player-track-name');
+            const artistName = document.getElementById('player-artist-name');
+            const artImg = document.getElementById('player-art');
+
+            if (track) {
+                trackName.textContent = track.name;
+                artistName.textContent = track.artist;
+                if (track.art) {
+                    artImg.src = track.art;
+                    artImg.classList.remove('hidden');
+                }
+            } else {
+                trackName.textContent = "Ambient Silence";
+                artistName.textContent = "No track attached to sentence";
+                artImg.classList.add('hidden');
+            }
+        }
+
+        /* ================= AUTHENTICATION FLOWS ================= */
+        function handleGoogleSignIn() {
+            APP_STATE.currentUser = {
+                name: "Demo Creator",
+                email: "creator@gmail.com",
+                avatar: "G"
+            };
+            
+            const authScreen = document.getElementById('auth-screen');
+            authScreen.classList.add('opacity-0');
+            setTimeout(() => {
+                authScreen.classList.add('hidden');
+                document.getElementById('app-header').classList.remove('hidden');
+                document.getElementById('app-footer').classList.remove('hidden');
+                renderFeed();
+            }, 700);
+        }
+
+        function toggleSpotifyAuthModal() {
+            if (!APP_STATE.spotifyConnected) {
+                // Simulate Spotify Auth Connect
+                APP_STATE.spotifyConnected = true;
+                APP_STATE.spotifyUser = "Spotify Account Connected";
+                
+                document.getElementById('spotify-dot').className = "w-2 h-2 rounded-full bg-spotifyGreen shadow-[0_0_8px_#1DB954]";
+                document.getElementById('spotify-status-text').textContent = "Spotify Active";
+                document.getElementById('spotify-user-label').textContent = "Connected Account";
+            } else {
+                // Disconnect option
+                APP_STATE.spotifyConnected = false;
+                document.getElementById('spotify-dot').className = "w-2 h-2 rounded-full bg-neutral-600";
+                document.getElementById('spotify-status-text').textContent = "Spotify";
+                document.getElementById('spotify-user-label').textContent = "Spotify Preview SDK";
+            }
+        }
+
+        /* ================= NAVIGATION ================= */
+        function navigateTo(page) {
+            document.getElementById('page-feed').classList.add('hidden');
+            document.getElementById('page-create').classList.add('hidden');
+            document.getElementById('page-reader').classList.add('hidden');
+
+            document.getElementById('nav-feed').className = "px-4 py-1.5 rounded-full text-warmMuted hover:text-warmAccent transition";
+            document.getElementById('nav-create').className = "px-4 py-1.5 rounded-full text-warmMuted hover:text-warmAccent transition";
+
+            if (page === 'feed') {
+                document.getElementById('page-feed').classList.remove('hidden');
+                document.getElementById('nav-feed').className = "px-4 py-1.5 rounded-full text-warmAccent bg-neutral-800 transition";
+                renderFeed();
+            } else if (page === 'create') {
+                document.getElementById('page-create').classList.remove('hidden');
+                document.getElementById('nav-create').className = "px-4 py-1.5 rounded-full text-warmAccent bg-neutral-800 transition";
+                if (APP_STATE.editorSentences.length === 0) {
+                    addEmptySentence();
+                }
+            }
+        }
+
+        /* ================= FEED RENDERER ================= */
+        function renderFeed() {
+            const grid = document.getElementById('stories-grid');
+            grid.innerHTML = '';
+
+            APP_STATE.stories.forEach(story => {
+                const card = document.createElement('div');
+                card.className = "group rounded-2xl bg-warmCard border border-warmBorder overflow-hidden flex flex-col justify-between hover:border-neutral-600 transition-all duration-300 shadow-xl cursor-pointer";
+                card.onclick = () => openReaderMode(story.id);
+
+                const trackCount = story.sentences.filter(s => s.track).length;
+
+                card.innerHTML = `
+                    <div class="h-44 w-full relative overflow-hidden bg-neutral-900">
+                        <img src="${story.coverImg}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-80 group-hover:opacity-100" alt="${story.title}">
+                        <div class="absolute inset-0 bg-gradient-to-t from-warmCard via-transparent to-transparent"></div>
+                        <span class="absolute top-3 right-3 text-[10px] uppercase font-medium tracking-wider bg-black/60 border border-warmBorder backdrop-blur-md px-2.5 py-1 rounded-full text-warmAccent">
+                            ${story.vibe}
+                        </span>
+                    </div>
+
+                    <div class="p-6 flex-grow flex flex-col justify-between space-y-4">
+                        <div class="space-y-1.5">
+                            <h3 class="serif-text text-xl font-semibold group-hover:text-white transition">${story.title}</h3>
+                            <p class="text-xs text-warmMuted">By ${story.author}</p>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs text-warmMuted pt-4 border-t border-warmBorder/60">
+                            <div class="flex items-center gap-3">
+                                <span><i data-lucide="clock" class="w-3.5 h-3.5 inline mr-1"></i>${story.readTime}</span>
+                                <span><i data-lucide="music" class="w-3.5 h-3.5 inline mr-1"></i>${trackCount} Tracks</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <i data-lucide="heart" class="w-3.5 h-3.5 ${story.isLiked ? 'text-red-500 fill-current' : ''}"></i>
+                                <span>${story.likes}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        /* ================= CREATOR STUDIO LOGIC ================= */
+        function addEmptySentence(text = '', track = null) {
+            APP_STATE.editorSentences.push({ text, track });
+            renderEditorSentences();
+        }
+
+        function parseRawTextIntoSentences() {
+            const raw = document.getElementById('editor-raw-text').value.trim();
+            if (!raw) return;
+
+            // Split text by period, exclamation, or question mark followed by space or newline
+            const parsed = raw.match(/[^.!?]+[.!?]+/g) || [raw];
+            
+            APP_STATE.editorSentences = parsed.map(s => ({
+                text: s.trim(),
+                track: null
+            }));
+
+            renderEditorSentences();
+        }
+
+        function renderEditorSentences() {
+            const list = document.getElementById('editor-sentences-list');
+            list.innerHTML = '';
+
+            APP_STATE.editorSentences.forEach((item, idx) => {
+                const div = document.createElement('div');
+                div.className = "p-4 rounded-xl bg-warmCard border border-warmBorder flex flex-col gap-3 transition hover:border-neutral-700";
+
+                div.innerHTML = `
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold text-warmMuted">Sentence #${idx + 1}</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="openSpotifyModal(${idx})" class="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-warmBorder text-xs text-warmAccent bg-neutral-900 hover:bg-neutral-800 transition">
+                                <i data-lucide="music" class="w-3 h-3 text-spotifyGreen"></i>
+                                <span>${item.track ? item.track.name : 'Attach Sound'}</span>
+                            </button>
+                            <button onclick="deleteSentence(${idx})" class="p-1 text-warmMuted hover:text-red-400 transition">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <textarea onchange="updateSentenceText(${idx}, this.value)" rows="2" class="w-full bg-neutral-900 border border-warmBorder/60 rounded-lg p-2.5 text-xs text-warmAccent focus:outline-none focus:border-warmMuted resize-none">${item.text}</textarea>
+                `;
+                list.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        function updateSentenceText(idx, val) {
+            APP_STATE.editorSentences[idx].text = val;
+        }
+
+        function deleteSentence(idx) {
+            APP_STATE.editorSentences.splice(idx, 1);
+            renderEditorSentences();
+        }
+
+        function publishStory() {
+            const title = document.getElementById('editor-title').value.trim();
+            const author = document.getElementById('editor-author').value.trim() || 'Anonymous';
+            const vibe = document.getElementById('editor-vibe').value.trim() || 'Ambient';
+
+            if (!title) {
+                alert("Please provide a story title.");
+                return;
+            }
+
+            if (APP_STATE.editorSentences.length === 0) {
+                alert("Please write at least one sentence.");
+                return;
+            }
+
+            const newStory = {
+                id: 'story-' + Date.now(),
+                title,
+                author,
+                vibe,
+                readTime: Math.max(1, Math.ceil(APP_STATE.editorSentences.length * 0.4)) + ' min',
+                likes: 0,
+                isLiked: false,
+                coverImg: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80",
+                sentences: [...APP_STATE.editorSentences]
+            };
+
+            APP_STATE.stories.unshift(newStory);
+            APP_STATE.editorSentences = [];
+            document.getElementById('editor-title').value = '';
+            document.getElementById('editor-raw-text').value = '';
+
+            navigateTo('feed');
+        }
+
+        /* ================= SPOTIFY MODAL & SEARCH ================= */
+        function openSpotifyModal(sentenceIdx) {
+            APP_STATE.activeEditingSentenceIdx = sentenceIdx;
+            document.getElementById('modal-sentence-idx').textContent = sentenceIdx + 1;
+            document.getElementById('spotify-modal').classList.remove('hidden');
+            handleSpotifySearch('');
+        }
+
+        function closeSpotifyModal() {
+            document.getElementById('spotify-modal').classList.add('hidden');
+        }
+
+        function handleSpotifySearch(query) {
+            const list = document.getElementById('spotify-results-list');
+            list.innerHTML = '';
+
+            const filtered = SPOTIFY_CATALOG.filter(t => 
+                t.name.toLowerCase().includes(query.toLowerCase()) || 
+                t.artist.toLowerCase().includes(query.toLowerCase())
+            );
+
+            filtered.forEach(track => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-2.5 rounded-xl bg-neutral-900 border border-warmBorder/60 hover:border-spotifyGreen/50 cursor-pointer transition";
+                item.onclick = () => selectSpotifyTrack(track);
+
+                item.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <img src="${track.art}" class="w-8 h-8 rounded object-cover" alt="Art">
+                        <div>
+                            <div class="text-xs font-medium text-warmAccent">${track.name}</div>
+                            <div class="text-[10px] text-warmMuted">${track.artist}</div>
+                        </div>
+                    </div>
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-warmMuted hover:text-spotifyGreen"></i>
+                `;
+                list.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        function selectSpotifyTrack(track) {
+            if (APP_STATE.activeEditingSentenceIdx !== null) {
+                APP_STATE.editorSentences[APP_STATE.activeEditingSentenceIdx].track = track;
+                renderEditorSentences();
+            }
+            closeSpotifyModal();
+        }
+
+        function removeAttachedTrack() {
+            if (APP_STATE.activeEditingSentenceIdx !== null) {
+                APP_STATE.editorSentences[APP_STATE.activeEditingSentenceIdx].track = null;
+                renderEditorSentences();
+            }
+            closeSpotifyModal();
+        }
+
+        /* ================= READER MODE & AUDIO SYNC ENGINE ================= */
+        function openReaderMode(storyId) {
+            const story = APP_STATE.stories.find(s => s.id === storyId);
+            if (!story) return;
+
+            APP_STATE.currentStory = story;
+            APP_STATE.activeSentenceIndex = 0;
+            APP_STATE.isPlaying = true;
+
+            document.getElementById('reader-story-title').textContent = story.title;
+            document.getElementById('reader-story-author').textContent = "By " + story.author;
+            document.getElementById('reader-like-count').textContent = story.likes;
+            
+            const likeIcon = document.getElementById('reader-like-icon');
+            if (story.isLiked) {
+                likeIcon.classList.add('text-red-500', 'fill-current');
+            } else {
+                likeIcon.classList.remove('text-red-500', 'fill-current');
+            }
+
+            document.getElementById('page-reader').classList.remove('hidden');
+
+            renderCurrentReaderSentence();
+            startReaderTimer();
+        }
+
+        function renderCurrentReaderSentence() {
+            const container = document.getElementById('reader-sentence-container');
+            const story = APP_STATE.currentStory;
+            const idx = APP_STATE.activeSentenceIndex;
+
+            if (!story || idx >= story.sentences.length) return;
+
+            const currentObj = story.sentences[idx];
+
+            // Clean previous active text
+            container.innerHTML = `
+                <div class="sentence-fade-in active-sentence">
+                    "${currentObj.text}"
+                </div>
+            `;
+
+            // Progress Text
+            document.getElementById('reader-progress-text').textContent = `${idx + 1} / ${story.sentences.length}`;
+
+            // Trigger audio binding crossfade
+            playSoundtrack(currentObj.track);
+        }
+
+        function startReaderTimer() {
+            clearInterval(APP_STATE.readerInterval);
+            if (APP_STATE.readerSpeed > 0 && APP_STATE.isPlaying) {
+                APP_STATE.readerInterval = setInterval(() => {
+                    nextSentence();
+                }, APP_STATE.readerSpeed);
+            }
+        }
+
+        function nextSentence() {
+            if (!APP_STATE.currentStory) return;
+
+            if (APP_STATE.activeSentenceIndex < APP_STATE.currentStory.sentences.length - 1) {
+                APP_STATE.activeSentenceIndex++;
+                renderCurrentReaderSentence();
+            } else {
+                // Loop or Pause at end
+                toggleReaderPlayback(false);
+            }
+        }
+
+        function prevSentence() {
+            if (!APP_STATE.currentStory) return;
+
+            if (APP_STATE.activeSentenceIndex > 0) {
+                APP_STATE.activeSentenceIndex--;
+                renderCurrentReaderSentence();
+            }
+        }
+
+        function toggleReaderPlayback(forceState) {
+            APP_STATE.isPlaying = forceState !== undefined ? forceState : !APP_STATE.isPlaying;
+            const playIcon = document.getElementById('reader-play-icon');
+
+            if (APP_STATE.isPlaying) {
+                playIcon.setAttribute('data-lucide', 'pause');
+                startReaderTimer();
+                if (APP_STATE.currentStory && APP_STATE.currentStory.sentences[APP_STATE.activeSentenceIndex].track) {
+                    playSoundtrack(APP_STATE.currentStory.sentences[APP_STATE.activeSentenceIndex].track);
+                }
+            } else {
+                playIcon.setAttribute('data-lucide', 'play');
+                clearInterval(APP_STATE.readerInterval);
+                if (currentAudio) currentAudio.pause();
+            }
+            lucide.createIcons();
+        }
+
+        function changeReaderSpeed(speedMs) {
+            APP_STATE.readerSpeed = parseInt(speedMs);
+            if (APP_STATE.isPlaying) {
+                startReaderTimer();
+            }
+        }
+
+        function toggleStoryLike() {
+            if (!APP_STATE.currentStory) return;
+            APP_STATE.currentStory.isLiked = !APP_STATE.currentStory.isLiked;
+            if (APP_STATE.currentStory.isLiked) {
+                APP_STATE.currentStory.likes++;
+            } else {
+                APP_STATE.currentStory.likes--;
+            }
+
+            document.getElementById('reader-like-count').textContent = APP_STATE.currentStory.likes;
+            const likeIcon = document.getElementById('reader-like-icon');
+            if (APP_STATE.currentStory.isLiked) {
+                likeIcon.classList.add('text-red-500', 'fill-current');
+            } else {
+                likeIcon.classList.remove('text-red-500', 'fill-current');
+            }
+        }
+
+        function exitReaderMode() {
+            clearInterval(APP_STATE.readerInterval);
+            if (currentAudio) {
+                fadeOutAudio(currentAudio);
+            }
+            document.getElementById('page-reader').classList.add('hidden');
+            renderFeed();
+        }
+
+        /* Initial Setup */
+        window.onload = function() {
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>
